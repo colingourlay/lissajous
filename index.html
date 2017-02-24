@@ -1,4 +1,18 @@
 <body>
-    <script src="d3.v3.min.js"></script>
-    <script src="lissajous.js"></script>
+  <style>
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100%;
+    }
+    svg {
+      animation: fadeIn .5s;
+    }
+  </style>
+  <script src="d3.v3.min.js"></script>
+  <script src="lissajous.js"></script>
 </body>
