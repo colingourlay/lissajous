@@ -11,6 +11,8 @@ var WIDTH = 400;
 var HEIGHT = Math.round(WIDTH * .7);
 var THICKNESS = Math.round(WIDTH / 6.5);
 var QUANTIZATION = 0.95;
+var QUANTIZED_WIDTH = WIDTH * QUANTIZATION;
+var SHAVED = WIDTH - QUANTIZED_WIDTH;
 var ANT_THICKNESS = Math.round(THICKNESS / 3);
 var MASK_THICKNESS = Math.round(THICKNESS * 1.25);
 
@@ -21,7 +23,7 @@ var X_SCALE = d3.scaleLinear()
 var pathFn = d3.line()
   .x(function (d) {
     var quantized = Math.max(Math.min(d.x, QUANTIZATION), -QUANTIZATION);
-    return Math.round(X_SCALE(quantized));
+    return Math.round(X_SCALE(quantized)) - SHAVED / 2;
   })
   .y(function (d) {
     return Math.round((HEIGHT - THICKNESS) / 2 * d.y + HEIGHT / 2);
@@ -43,7 +45,7 @@ var antsASegment = lissajous.slice(102).concat(lissajous.slice(0, 39));
 var antsBSegment = lissajous.slice(42, 99);
 
 var svg = d3.select('body').append('svg')
-  .attr('width', WIDTH)
+  .attr('width', QUANTIZED_WIDTH)
   .attr('height', HEIGHT);
 
 var lissajousPath = svg.append('path')
@@ -133,7 +135,7 @@ maskLissajous.append('path')
 var maskAnts = defs.append('mask')
   .attr('x', 0)
   .attr('y', 0)
-  .attr('width', WIDTH)
+  .attr('width', QUANTIZED_WIDTH)
   .attr('height', HEIGHT)
   .attr('maskUnits', 'userSpaceOnUse')
   .attr('id', 'mask-ants');
@@ -141,7 +143,7 @@ var maskAnts = defs.append('mask')
 maskAnts.append('rect')
   .attr('fill', '#fff')
   .attr('stroke', 'none')
-  .attr('width', WIDTH)
+  .attr('width', QUANTIZED_WIDTH)
   .attr('height', HEIGHT)
 
 maskAnts.append('path')
