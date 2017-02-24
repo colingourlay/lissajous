@@ -1,15 +1,22 @@
 // Constants
-var TWO_PI = 2 * Math.PI;
+var TWO_PI = Math.PI * 2;
 var ABC_A = 1;
 var ABC_B = 3;
+var POINTS = 120;
+var LISSAJOUS_COLOR = '#1C1C1C';
+var ANTS_COLOR = '#363636';
+
+// Constants (tweakable)
 var WIDTH = 400;
 var HEIGHT = Math.round(WIDTH / 4 * 3);
-var POINTS = Math.round(WIDTH * HEIGHT / 1000);
 var THICKNESS = Math.round(WIDTH / TWO_PI);
 var ANT_THICKNESS = Math.round(THICKNESS / 3);
 var MASK_THICKNESS = Math.round(THICKNESS * 1.25);
-var LISSAJOUS_COLOR = '#1C1C1C';
-var ANTS_COLOR = '#363636';
+
+var pathFn = d3.svg.line()
+  .x(function(d) { return d.x; })
+  .y(function(d) { return d.y; })
+  .interpolate('linear');
 
 var lissajous = [];
 for (var i = 0, len = POINTS; i <= len; i++) {
@@ -19,73 +26,41 @@ for (var i = 0, len = POINTS; i <= len; i++) {
   });
 }
 
-var lissajousA = lissajous.slice(lissajous.length - 2).concat(lissajous.slice(0, POINTS / 4 + 2));
-var lissajousB = lissajous.slice(POINTS / 4 - 1, POINTS / 2 + 2);
-var lissajousC = lissajous.slice(POINTS / 2 - 1, POINTS / 4 * 3 + 2);
-var lissajousD = lissajous.slice(POINTS / 4 * 3 - 1).concat(lissajous.slice(0, 2));
+var maskSegmentA = lissajous.slice(15, 26);
+var maskSegmentA2 = lissajous.slice(0, 27);
+var maskSegmentB = lissajous.slice(75, 86);
+var maskSegmentB2 = lissajous.slice(60, 87);
+var antsASegment = lissajous.slice(102).concat(lissajous.slice(0, 39));
+var antsBSegment = lissajous.slice(42, 99);
 
-// Path rendering function
-var pathFn = d3.svg.line()
-  .x(function(d) { return d.x; })
-  .y(function(d) { return d.y; })
-  .interpolate('linear');
-
-// SVG element
 var svg = d3.select('body').append('svg')
   .attr('width', WIDTH)
   .attr('height', HEIGHT);
 
-
-svg.append('path')
-  .attr('class', 'lissajous lissajous--a')
-  .attr('d', pathFn(lissajousA));
-
-svg.append('path')
-  .attr('class', 'lissajous lissajous--c')
-  .attr('d', pathFn(lissajousC));
-
-svg.append('path')
-  .attr('class', 'lissajous lissajous--b')
-  .attr('mask', 'url(#mask-a)')
-  .attr('d', pathFn(lissajousB));
-
-svg.append('path')
-  .attr('class', 'lissajous lissajous--d')
-  .attr('mask', 'url(#mask-b)')
-  .attr('d', pathFn(lissajousD));
-
-var antsA = svg.append('path')
-  .attr('class', 'lissajousAnts lissajousAnts--a')
-  .attr('d', pathFn(lissajousA));
-
-var antsB = svg.append('path')
-  .attr('class', 'lissajousAnts lissajousAnts--c')
-  .attr('d', pathFn(lissajousC));
-
-var antsC = svg.append('path')
-  .attr('class', 'lissajousAnts lissajousAnts--b')
-  .attr('mask', 'url(#mask-a)')
-  .attr('d', pathFn(lissajousB));
-
-var antsD = svg.append('path')
-  .attr('class', 'lissajousAnts lissajousAnts--d')
-  .attr('mask', 'url(#mask-b)')
-  .attr('d', pathFn(lissajousD));
-
-var pathFull = svg.append('path')
+var lissajousPath = svg.append('path')
+  .attr('class', 'lissajous')
+  .attr('mask', 'url(#mask-lissajous)')
   .attr('d', pathFn(lissajous));
 
-var DASHOFFSET = pathFull[0][0].getTotalLength();
+var DASHOFFSET = lissajousPath[0][0].getTotalLength();
 var GAP_LENGTH = DASHOFFSET / 32;
-var DASH_LENGTH = DASHOFFSET / 4 - GAP_LENGTH;
+var DASH_LENGTH = DASHOFFSET / 8 - GAP_LENGTH;
 var DASHARRAY = [Math.round(DASH_LENGTH), Math.round(GAP_LENGTH)].join();
 
-pathFull.remove();
+var antsAPath = svg.append('path')
+  .attr('class', 'ants')
+  .attr('mask', 'url(#mask-ants)')
+  .attr('d', pathFn(antsASegment));
+
+var antsBPath = svg.append('path')
+  .attr('class', 'ants')
+  .attr('mask', 'url(#mask-ants)')
+  .attr('d', pathFn(antsBSegment));
 
 var defs = svg.append('defs');
 
 defs.append('style').text(`
-  @keyframes lissajousAnts {
+  @keyframes ants {
     100% {
       stroke-dashoffset: 0;
     }
@@ -96,7 +71,7 @@ defs.append('style').text(`
     stroke-linejoin: round;
     fill: none;
   }
-  .lissajousAnts {
+  .ants {
     stroke: ${ANTS_COLOR};
     stroke-width: ${ANT_THICKNESS};
     stroke-linecap: round;
@@ -104,45 +79,82 @@ defs.append('style').text(`
     stroke-dasharray: ${DASHARRAY};
     stroke-dashoffset: ${Math.round(DASHOFFSET)};
     fill: none;
-    animation: lissajousAnts 10s linear infinite;
+    animation: ants 10s linear infinite;
   }
 `);
 
-var maskA = defs.append('mask')
+var maskLissajous = defs.append('mask')
   .attr('x', 0)
   .attr('y', 0)
   .attr('width', WIDTH)
   .attr('height', HEIGHT)
   .attr('maskUnits', 'userSpaceOnUse')
-  .attr('id', 'mask-a');
+  .attr('id', 'mask-lissajous');
 
-var maskB = defs.append('mask')
-  .attr('x', 0)
-  .attr('y', 0)
-  .attr('width', WIDTH)
-  .attr('height', HEIGHT)
-  .attr('maskUnits', 'userSpaceOnUse')
-  .attr('id', 'mask-b');
-
-maskA.append('rect')
+maskLissajous.append('rect')
   .attr('fill', '#fff')
   .attr('stroke', 'none')
   .attr('width', WIDTH)
   .attr('height', HEIGHT)
 
-maskA.append('path')
+maskLissajous.append('path')
   .attr('stroke', '#000')
   .attr('stroke-width', MASK_THICKNESS)
   .attr('fill', 'none')
-  .attr('d', pathFn(lissajousC));
+  .attr('d', pathFn(maskSegmentA));
 
-maskB.append('rect')
+maskLissajous.append('path')
+  .attr('stroke', '#fff')
+  .attr('stroke-width', THICKNESS)
+  .attr('fill', 'none')
+  .attr('d', pathFn(maskSegmentA2));
+
+maskLissajous.append('path')
+  .attr('stroke', '#000')
+  .attr('stroke-width', MASK_THICKNESS)
+  .attr('fill', 'none')
+  .attr('d', pathFn(maskSegmentB));
+
+maskLissajous.append('path')
+  .attr('stroke', '#fff')
+  .attr('stroke-width', THICKNESS)
+  .attr('fill', 'none')
+  .attr('d', pathFn(maskSegmentB2));
+
+var maskAnts = defs.append('mask')
+  .attr('x', 0)
+  .attr('y', 0)
+  .attr('width', WIDTH)
+  .attr('height', HEIGHT)
+  .attr('maskUnits', 'userSpaceOnUse')
+  .attr('id', 'mask-ants');
+
+maskAnts.append('rect')
   .attr('fill', '#fff')
+  .attr('stroke', 'none')
   .attr('width', WIDTH)
   .attr('height', HEIGHT)
 
-maskB.append('path')
+maskAnts.append('path')
   .attr('stroke', '#000')
   .attr('stroke-width', MASK_THICKNESS)
   .attr('fill', 'none')
-  .attr('d', pathFn(lissajousA));
+  .attr('d', pathFn(maskSegmentA));
+
+maskAnts.append('path')
+  .attr('stroke', '#fff')
+  .attr('stroke-width', ANT_THICKNESS)
+  .attr('fill', 'none')
+  .attr('d', pathFn(maskSegmentA2));
+
+maskAnts.append('path')
+  .attr('stroke', '#000')
+  .attr('stroke-width', MASK_THICKNESS)
+  .attr('fill', 'none')
+  .attr('d', pathFn(maskSegmentB));
+
+maskAnts.append('path')
+  .attr('stroke', '#fff')
+  .attr('stroke-width', ANT_THICKNESS)
+  .attr('fill', 'none')
+  .attr('d', pathFn(maskSegmentB2));
